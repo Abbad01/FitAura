@@ -1,5 +1,5 @@
 import React from "react";
-import heroImg from "../../assets/rabbit-hero.webp";
+import heroImg from "../../assets/FitAura hero Image.png";
 import { Link } from "react-router-dom";
 
 const Hero = () => {
@@ -22,13 +22,13 @@ const Hero = () => {
             Explore our vacation-ready outfits with fast worldwide shipping.
           </p>
 
-          <Link
+          {/* <Link
             to="#"
             className="inline-block bg-white text-gray-900 px-8 py-3 rounded-md text-lg font-medium 
                  hover:bg-gray-200 transition-colors duration-300"
           >
             Shop Now
-          </Link>
+          </Link> */}
         </div>
       </div>
     </section>

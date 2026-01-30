@@ -1,6 +1,6 @@
 import React from "react";
 import menCollection from "../../assets/mens-collection.webp";
-import womenCollection from "../../assets/womens-collection.webp";
+import womenCollection from "../../assets/women-collection.png";
 import CollectionCard from "../Cards/CollectionCard";
 const GenderCollectionSection = () => {
   return (

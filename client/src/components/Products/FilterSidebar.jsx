@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 
 const FilterSidebar = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
 
-  // Initialize filters with ALL fields including color
   const [filters, setFilters] = useState({
     category: "",
     gender: "",
@@ -16,7 +14,9 @@ const FilterSidebar = () => {
     minPrice: 0,
     maxPrice: 100,
   });
+
   const [priceRange, setPriceRange] = useState([0, 100]);
+
   const categories = ["Top Wear", "Bottom Wear"];
   const colors = [
     "Red",
@@ -51,6 +51,7 @@ const FilterSidebar = () => {
   ];
   const genders = ["Male", "Female"];
 
+  /* ---------------- Sync state FROM URL ---------------- */
   useEffect(() => {
     const params = Object.fromEntries([...searchParams]);
 
@@ -61,59 +62,65 @@ const FilterSidebar = () => {
       size: params.size ? params.size.split(",") : [],
       material: params.material ? params.material.split(",") : [],
       brand: params.brand ? params.brand.split(",") : [],
-      minPrice: params.minPrice || 0,
-      maxPrice: params.maxPrice || 100,
+      minPrice: Number(params.minPrice) || 0,
+      maxPrice: Number(params.maxPrice) || 100,
     });
 
-    setPriceRange([0, params.maxPrice || 100]);
+    setPriceRange([0, Number(params.maxPrice) || 100]);
   }, [searchParams]);
 
-  const handleFilterChange = (e) => {
-    const { name, value, checked, type } = e.target;
-    // console.log({ name, value, checked, type });
-    let newFilters = { ...filters };
-    if (type === "checkbox") {
-      if (checked) {
-        newFilters[name] = [...(newFilters[name] || []), value];
-      } else {
-        //if unchecked
-        newFilters[name] = newFilters[name].filter((item) => item !== value);
-      }
-    }
-    //other than checkBox
-    else {
-      newFilters[name] = value;
-    }
-    setFilters(newFilters);
-    // console.log(newFilters);
-    updateURLParams(newFilters);
-  };
-
+  /* ---------------- Update URL ---------------- */
   const updateURLParams = (newFilters) => {
     const params = new URLSearchParams();
 
-    // Example newFilters:
-    // { category: "Top Wear", size: ["XS", "S"], gender: "Male" }
-
-    Object.keys(newFilters).forEach((key) => {
-      // Handle array filters (size, material, brand)
-      if (Array.isArray(newFilters[key]) && newFilters[key].length > 0) {
-        params.append(key, newFilters[key].join(","));
-      }
-
-      // Handle single value filters
-      else if (newFilters[key]) {
-        params.append(key, newFilters[key]);
+    Object.entries(newFilters).forEach(([key, value]) => {
+      if (Array.isArray(value) && value.length > 0) {
+        params.set(key, value.join(","));
+      } else if (!Array.isArray(value) && value) {
+        params.set(key, value);
       }
     });
 
     setSearchParams(params);
-    navigate(`?${params.toString()}`);
   };
 
+  /* ---------------- Inputs (radio / checkbox) ---------------- */
+  const handleFilterChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    let updated = { ...filters };
+
+    if (type === "checkbox") {
+      updated[name] = checked
+        ? [...updated[name], value]
+        : updated[name].filter((v) => v !== value);
+    } else {
+      updated[name] = value;
+    }
+
+    setFilters(updated);
+    updateURLParams(updated);
+  };
+
+  /* ---------------- Color Button ---------------- */
+  const handleColorSelect = (color) => {
+    const updated = { ...filters, color };
+    setFilters(updated);
+    updateURLParams(updated);
+  };
+
+  /* ---------------- Price ---------------- */
+  const handlePriceChange = (e) => {
+    const value = Number(e.target.value);
+    const updated = { ...filters, minPrice: 0, maxPrice: value };
+
+    setPriceRange([0, value]);
+    setFilters(updated);
+    updateURLParams(updated);
+  };
+
+  /* ---------------- Clear ---------------- */
   const handleClearFilters = () => {
-    //used in clear All button
-    setFilters({
+    const cleared = {
       category: "",
       gender: "",
       color: "",
@@ -122,183 +129,104 @@ const FilterSidebar = () => {
       brand: [],
       minPrice: 0,
       maxPrice: 100,
-    });
+    };
+
+    setFilters(cleared);
     setPriceRange([0, 100]);
     setSearchParams(new URLSearchParams());
   };
-  const handlePriceChange = (e) => {
-    const newPrice = e.target.value;
-    setPriceRange([0, newPrice]);
-    const newFilters = { ...filters, minPrice: 0, maxPrice: newPrice };
-    setFilters(filters);
-    updateURLParams(newFilters);
-  };
+
   return (
     <div className="p-4 space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-xl font-medium text-gray-800">Filters</h3>
         <button
           onClick={handleClearFilters}
-          className="text-sm text-blue-600 hover:text-blue-800 font-medium hover:cursor-pointer"
+          className="text-sm text-blue-600 font-medium hover:cursor-pointer"
         >
           Clear All
         </button>
       </div>
 
       {/* Category */}
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
-          Category
-        </label>
-        {categories.map((category) => (
-          <label
-            key={category}
-            className="flex items-center gap-2 text-sm text-gray-600"
-          >
+      <div>
+        <label className="block text-sm font-medium">Category</label>
+        {categories.map((c) => (
+          <label key={c} className="flex items-center gap-2">
             <input
               type="radio"
               name="category"
-              value={category}
+              value={c}
+              checked={filters.category === c}
               onChange={handleFilterChange}
-              checked={filters.category === category}
-              className="h-4 w-4"
             />
-            {category}
+            {c}
           </label>
         ))}
       </div>
 
       {/* Gender */}
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
-          Gender
-        </label>
-        {genders.map((gender) => (
-          <label
-            key={gender}
-            className="flex items-center gap-2 text-sm text-gray-600"
-          >
+      <div>
+        <label className="block text-sm font-medium">Gender</label>
+        {genders.map((g) => (
+          <label key={g} className="flex items-center gap-2">
             <input
               type="radio"
               name="gender"
-              value={gender}
+              value={g}
+              checked={filters.gender === g}
               onChange={handleFilterChange}
-              checked={filters.gender === gender}
-              className="h-4 w-4"
             />
-            {gender}
+            {g}
           </label>
         ))}
       </div>
 
       {/* Colors */}
-      <div className="space-y-3">
-        <label className="block text-sm font-medium text-gray-700">
-          Colors
-        </label>
-        <div className="flex flex-wrap gap-2">
-          {colors.map((color) => (
+      <div>
+        <label className="block text-sm font-medium">Colors</label>
+        <div className="flex gap-2 flex-wrap">
+          {colors.map((c) => (
             <button
-              key={color}
-              name="color"
-              value={color}
-              onClick={handleFilterChange}
-              className={`px-4 py-4 h-4 w-4 text-xs border rounded-full
-                       text-gray-600 hover:bg-gray-100 transition hover:cursor-pointer ${
-                         filters.color === color ? "ring-2 ring-blue-500" : ""
-                       }`}
-              style={{ backgroundColor: color.toLowerCase() }}
-            ></button>
+              key={c}
+              onClick={() => handleColorSelect(c)}
+              className={`h-6 w-6 rounded-full border ${
+                filters.color === c ? "ring-2 ring-blue-500" : ""
+              }`}
+              style={{ backgroundColor: c.toLowerCase() }}
+            />
           ))}
         </div>
       </div>
 
-      {/* Sizes */}
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">Size</label>
-        <div className="flex flex-wrap gap-2">
-          {sizes.map((size) => (
-            <label
-              key={size}
-              className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer"
-            >
-              <input
-                type="checkbox"
-                name="size"
-                value={size}
-                onChange={handleFilterChange}
-                checked={filters.size.includes(size)}
-                className="h-4 w-4 text-blue-600 rounded"
-              />
-              <span>{size}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {/* Materials */}
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
-          Material
-        </label>
-        {materials.map((material) => (
-          <label
-            key={material}
-            className="flex items-center gap-2 text-sm text-gray-600"
-          >
+      {/* Size */}
+      <div>
+        <label className="block text-sm font-medium">Size</label>
+        {sizes.map((s) => (
+          <label key={s} className="flex items-center gap-2">
             <input
               type="checkbox"
-              name="material"
-              value={material}
+              name="size"
+              value={s}
+              checked={filters.size.includes(s)}
               onChange={handleFilterChange}
-              checked={filters.material.includes(material)}
-              className="h-4 w-4"
             />
-            {material}
+            {s}
           </label>
         ))}
       </div>
 
-      {/* Brands */}
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">Brand</label>
-        {brands.map((brand) => (
-          <label
-            key={brand}
-            className="flex items-center gap-2 text-sm text-gray-600"
-          >
-            <input
-              type="checkbox"
-              name="brand"
-              value={brand}
-              onChange={handleFilterChange}
-              checked={filters.brand.includes(brand)}
-              className="h-4 w-4"
-            />
-            {brand}
-          </label>
-        ))}
-      </div>
-
-      {/* Price Range */}
-      <div className="space-y-3">
-        <label className="block text-sm font-medium text-gray-700">
-          Price Range
-        </label>
-
+      {/* Price */}
+      <div>
+        <label className="block text-sm font-medium">Price</label>
         <input
           type="range"
           min="0"
           max="100"
           value={priceRange[1]}
           onChange={handlePriceChange}
-          className="w-full accent-black"
+          className="w-full"
         />
-
-        <div className="flex justify-between text-xs text-gray-500">
-          <span>$0</span>
-          <span>$100</span>
-        </div>
       </div>
     </div>
   );
