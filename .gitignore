@@ -4,7 +4,7 @@ logs
 
 # Node Modules
 client/node_modules
-serverr/node_modules
+server/node_modules
 
 # Environment variables
 client/.env
