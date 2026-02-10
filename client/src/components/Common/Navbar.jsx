@@ -3,7 +3,7 @@ import { FiUser, FiShoppingCart, FiSearch, FiX } from "react-icons/fi";
 import { HiBars3 } from "react-icons/hi2";
 import Searchbar from "./Searchbar";
 import { useState } from "react";
-import Cartdrawer from "../Layout/Cartdrawer";
+import Cartdrawer from "../Layout/CartDrawer";
 import { useSelector } from "react-redux";
 
 const Navbar = () => {
